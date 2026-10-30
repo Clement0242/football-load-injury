@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Load states and injuries</title>
+<meta name="description" content="Hidden Markov load states (MILS), heart rate × GPS coupling and injuries in elite women's football, on the SoccerMon open dataset.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="projet.css">
+</head>
+<body>
+<header class="barre"><div class="enveloppe">
+  <a class="marque" href="https://clement0242.github.io"><b>CV</b> Clément Verdier</a>
+  <nav aria-label="Sections">
+    <a href="#coupling">Heart rate × GPS</a><a href="#mils">Load states</a><a href="#injuries">Injuries</a>
+    <a href="#method">Method</a>
+  </nav>
+</div></header>
+
+<main>
+<div class="tete"><div class="enveloppe">
+  <p class="surtitre">Sport science · hidden Markov models · open data</p>
+  <h1>What load says, <em>and what it does not</em></h1>
+  <p class="chapeau">Two seasons of an elite women's football squad: questionnaires, GNSS and heart rate,
+  aligned day by day. How internal and external load agree, what hidden load states look like with MILS,
+  and whether any of it warns of an injury.</p>
+  <div class="boutons">
+    <a class="bouton" href="https://github.com/Clement0242/football-load-injury">Code on GitHub</a>
+    <a class="bouton creux" href="https://clement0242.github.io/athlete-data-governance/">The governed data behind it</a>
+  </div>
+  <div class="chiffres">
+    <div><b>78</b><span>players, two teams, 2020–2021</span></div>
+    <div><b>30,573</b><span>player-days aligned across sources</span></div>
+    <div><b>10,075</b><span>GNSS + heart-rate recordings, 99 GB streamed</span></div>
+    <div><b>101</b><span>injury episodes rebuilt from daily reports</span></div>
+  </div>
+</div></div>
+
+<section id="coupling"><div class="enveloppe">
+  <p class="etiq">1 · Heart rate × GPS</p>
+  <h2>Internal and external load agree, within a player</h2>
+  <div class="prose">
+    <p>Correlations are computed <strong>within each player</strong> (repeated-measures correlation): a player who
+    always covers more distance at a lower heart rate cannot create a correlation by herself.
+    On 6,071 player-days (46 players) with both a questionnaire and a recording:</p>
+    <ul>
+      <li>Heart-rate load (Edwards TRIMP) follows distance (r = 0.87) and accelerometer load (r = 0.90) closely.</li>
+      <li>The questionnaire (sRPE) agrees with heart rate (r = 0.53, 95 % CI [0.48; 0.57], 894 days) and with
+      distance (r = 0.55), but less: perceived effort carries something the sensors do not.</li>
+    </ul>
+  </div>
+  <figure><div class="feuille"><img src="figures/coupling_matrix.png" alt="Matrix of within-player correlations between six daily load measures." width="960" height="780" loading="lazy"></div>
+  <figcaption>Within-player correlation between daily loads. Questionnaire, heart rate, GNSS and accelerometer.</figcaption></figure>
+  <h3>The cardiac cost of the same running speed</h3>
+  <div class="prose"><p>From 30-second epochs, heart rate is regressed on speed in each session and read at 2 m/s.
+  Only 207 sessions (30 players) qualify: a valid strap <em>and</em> enough running epochs for a stable
+  regression. Its within-player link with the morning's wellness is weak and not in the expected direction
+  (readiness r = 0.12 [−0.06; 0.31]; fatigue r = 0.08). As measured here, it is not yet a usable
+  indicator: it needs a strap worn every session, or a standard running drill to read it on.</p></div>
+  <figure><div class="feuille"><img src="figures/hr_cost_timeline.png" alt="Heart rate at 2 m/s across the season for four players." width="1950" height="520" loading="lazy"></div>
+  <figcaption>Heart rate at 2 m/s for four players (7-session rolling median).</figcaption></figure>
+</div></section>
+
+<section id="mils"><div class="enveloppe">
+  <p class="etiq">2 · Load states (MILS)</p>
+  <h2>Three hidden states in the daily load</h2>
+  <div class="prose">
+    <p>MILS (Markov Index Load State, Q. De Larochelambert &amp; K. Barlier, INSEP) fits a hidden Markov model to
+    each player's daily load, z-scored against her own habits. A rest day is <em>missing</em>, not a low value.
+    The package is in R; it is reimplemented here in Python and checked against <code>hmmlearn</code>.</p>
+    <ul>
+      <li>Typical sRPE in each state: S1 240 AU, S2 420 AU, S3 630 AU; S3 holds 49% of the days.</li>
+      <li>Probability of staying in the same state the next day: S1 34% · S2 96% · S3 71%. S2 is a lasting regime of
+      below-habit load; S1 days are isolated light days within training weeks.</li>
+      <li>The BIC (2 states 38,648, 3 states 38,293, 4 states 38,081) would prefer more states for sRPE; three are kept, the MILS default, because they
+      stay interpretable for a staff.</li>
+      <li>States from the questionnaire and from heart rate agree little (Cohen's κ = 0.05): "high load" depends on
+      which load you measure.</li>
+    </ul>
+  </div>
+  <figure><div class="feuille"><img src="figures/mils_timeline.png" alt="One player's daily sRPE over two seasons, coloured by state, with the probability of each state below." width="1800" height="690" loading="lazy"></div>
+  <figcaption>One player, two seasons. Bars: daily sRPE coloured by the most probable state. Below: probability of each state.</figcaption></figure>
+</div></section>
+
+<section id="injuries"><div class="enveloppe">
+  <p class="etiq">3 · Injuries</p>
+  <h2>Does anything warn of an injury in the next 7 days?</h2>
+  <div class="prose"><p>For each day a player was not injured (24,696 days, 55 injury onsets), the outcome is an
+  injury starting in the next 7 days. Each indicator is judged by its <strong>within-player AUC</strong>:
+  are a player's days before an injury ranked above her own other days? 0.5 is chance. Combined indicators use a
+  logistic model that never saw the player it predicts.</p></div>
+  <div class="tableau"><table>
+    <thead><tr><th>Indicator</th><th class="num">AUC</th><th class="num">95 % CI</th><th class="num">Days before injury</th><th class="num">Players</th></tr></thead>
+    <tbody><tr><td>REDI acute:chronic (sRPE)</td><td class="num">0.44</td><td class="num">0.38 – 0.49</td><td class="num">232</td><td class="num">12</td></tr><tr><td>MILS high-load state, 7 d</td><td class="num">0.55</td><td class="num">0.43 – 0.63</td><td class="num">232</td><td class="num">12</td></tr><tr><td>Poor readiness, 7 d</td><td class="num">0.53</td><td class="num">0.39 – 0.71</td><td class="num">180</td><td class="num">11</td></tr><tr><td>Fatigue, 7 d</td><td class="num">0.49</td><td class="num">0.32 – 0.67</td><td class="num">180</td><td class="num">11</td></tr><tr><td>Soreness, 7 d</td><td class="num">0.43</td><td class="num">0.32 – 0.59</td><td class="num">180</td><td class="num">11</td></tr><tr><td>Wellness (3 items, model)</td><td class="num">0.44</td><td class="num">0.28 – 0.59</td><td class="num">180</td><td class="num">11</td></tr><tr><td>All (model)</td><td class="num">0.45</td><td class="num">0.32 – 0.58</td><td class="num">180</td><td class="num">11</td></tr></tbody>
+  </table></div>
+  <div class="constat"><p>No indicator does better than chance with any confidence: every interval includes 0.5.
+  The best, MILS high-load state, 7 d, reaches 0.55 (0.43 – 0.63).</p>
+  <p>The 55 injury onsets come from only 12 players, and injuries are self-reported, so the test has
+  little power. The finding still matches the literature (Impellizzeri et al. 2020): these indicators help plan
+  training; they do not predict a given player's injury.</p></div>
+  <div class="duo">
+    <figure><div class="feuille"><img src="figures/injury_auc.png" alt="AUC of each indicator with its confidence interval." width="990" height="510" loading="lazy"></div>
+    <figcaption>Within-player AUC, players resampled for the interval.</figcaption></figure>
+    <figure><div class="feuille"><img src="figures/injury_event_study.png" alt="Probability of the high-load state in the 28 days before injury onsets, against all days." width="960" height="480" loading="lazy"></div>
+    <figcaption>Probability of the high-load state in the 4 weeks before injuries, against all days.</figcaption></figure>
+  </div>
+</div></section>
+
+<section id="method"><div class="enveloppe">
+  <p class="etiq">Method</p>
+  <h2>Choices that matter</h2>
+  <div class="cartes">
+    <div class="carte"><h3>Governed data</h3><p>Every input comes from the marts of a dbt warehouse whose rules found frozen
+      heart-rate sensors, missing sessions and twice-pseudonymised players before any analysis ran.</p></div>
+    <div class="carte"><h3>Within-player statistics</h3><p>Correlations and AUCs compare each player with herself.
+      A pooled leave-one-player-out AUC is biased here (it fell far below 0.5): the reason is in the code.</p></div>
+    <div class="carte"><h3>Missing is not zero</h3><p>No report, no session and no strap are three different things,
+      and none of them becomes a 0 in a model.</p></div>
+    <div class="carte"><h3>Limits</h3><p>Two teams, self-reported injuries, heart rate on a minority of sessions,
+      and 28 players whose GNSS data cannot be linked to their questionnaires.</p></div>
+  </div>
+<pre><code>pip install -e .
+python analysis/run_analysis.py --marts https://raw.githubusercontent.com/Clement0242/athlete-data-governance/main/data/marts
+python analysis/build_report.py</code></pre>
+  <div class="prose"><p>Data: SoccerMon, Midoglu C. et al. (2024), <em>Scientific Data</em> 11, 553 (CC-BY 4.0).
+  MILS: De Larochelambert Q., Barlier K., github.com/quentincad2/MILS (GPL-3); this repository is GPL-3 as well.</p></div>
+</div></section>
+</main>
+
+<footer><div class="enveloppe">
+  <a href="https://clement0242.github.io">Clément Verdier</a> · data engineer &amp; sport scientist ·
+  <a href="https://github.com/Clement0242/football-load-injury">source</a>
+</div></footer>
+</body>
+</html>

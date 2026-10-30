@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "charge"
+version = "0.1.0"
+description = "Training load states (MILS), heart rate and GPS coupling, and injuries in elite women's football (SoccerMon)."
+requires-python = ">=3.10"
+license = "GPL-3.0-or-later"
+dependencies = ["numpy", "scipy", "pandas", "pyarrow", "matplotlib", "scikit-learn", "numba"]
+
+[project.optional-dependencies]
+test = ["pytest", "hmmlearn"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/charge"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
